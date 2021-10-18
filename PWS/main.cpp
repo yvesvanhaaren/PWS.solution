@@ -1,5 +1,4 @@
 #include "SDL.h"
-#undef main
 
 int main(int argc, char* argv[])
 {
@@ -8,7 +7,7 @@ int main(int argc, char* argv[])
 	SDL_Window* window = SDL_CreateWindow("title", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 600, 400, SDL_WINDOW_SHOWN);
 	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
 
-	SDL_GetRenderDrawColor(renderer, 0, (uint8_t*)255, 0, (uint8_t*)255);
+	SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
 
 	SDL_RenderClear(renderer);
 
