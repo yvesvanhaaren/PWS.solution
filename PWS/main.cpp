@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
 
         //Save screen data
         const Uint32 format = SDL_PIXELFORMAT_ARGB8888;
-        const int width = 640;
+        const int width = 600;
         const int height = 400;
 
         SDL_Surface* surface = SDL_CreateRGBSurfaceWithFormat(0, width, height, 32, format);
@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
         SaveScreenshot(surface); //Save a screenshot with the name "name"
        
         //Calculate coverage
-        float coverage = 0;
+        float coverage[24000];
 
         for (int i = 1; i < surface->w; i++)
         {
@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
                 SDL_Color rgb;
                 Uint32 data = getpixel(surface, i, j);
                 SDL_GetRGB(data, surface->format, &rgb.r, &rgb.g, &rgb.b);
-                coverage = (coverage * ((i * j - 1) / (i * j))) + ((1) / (i * j)) * (rgb.r + rgb.b + rgb.g) * (1 / 3);
+                coverage[i*surface->w + j] = (rgb.r + rgb.b + rgb.g) * (1 / 3);
             }
         }
 
