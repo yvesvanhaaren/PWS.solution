@@ -7,8 +7,8 @@ public:
 
 	struct Wall {
 		float height;
-		int domains;
-		int domaine;
+		int domains; //domainstart
+		int domaine; //domainend
 		bool x; //true = x, false = y
 	};
 

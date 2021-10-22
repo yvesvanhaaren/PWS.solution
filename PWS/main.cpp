@@ -36,10 +36,21 @@ int main(int argc, char* argv[])
         SDL_RenderDrawLine(renderer, beginpointx, beginpointy, Endpoint.x, Endpoint.y);
     }
 
+
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     for (int i = 0; i < ModelData::size; i++)
     {
         ModelData::Wall toDraw = ModelData::GetWall(i);
         //Draw the wall to screen
+        if (toDraw.x){
+            SDL_RenderDrawLine(renderer, toDraw.height, toDraw.domains, toDraw.height, toDraw.domaine);
+        }
+
+        if (!toDraw.x)
+        {
+            SDL_RenderDrawLine(renderer, toDraw.domains, toDraw.height, toDraw.domaine, toDraw.height);
+        }
+        
     }
 
 
@@ -56,9 +67,6 @@ int main(int argc, char* argv[])
             // Handle each specific event
             if (event.type == SDL_QUIT) {
                 isRunning = false;
-            }
-            if (event.type == SDL_MOUSEMOTION) {
-                std::cout << "mouse has been moved\n";
             }
             if (event.type == SDL_KEYDOWN) {
                 std::cout << "a key has been pressed\n";
