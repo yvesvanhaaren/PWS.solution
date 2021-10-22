@@ -1,10 +1,12 @@
 #include "SDL.h"
 #include "Walls.h"
 #include "Vectors.h"
+#include "ModelData.h"
+
 void SaveScreenshot(SDL_Renderer* renderer);          //Declare function so we can use them in main
 
-int width = 600;
-int height = 400;
+const int width = ModelData::width;
+const int height = ModelData::height;
 
 int main(int argc, char* argv[])
 {
@@ -34,12 +36,37 @@ int main(int argc, char* argv[])
         SDL_RenderDrawLine(renderer, beginpointx, beginpointy, Endpoint.x, Endpoint.y);
     }
 
+    for (int i = 0; i < ModelData::size; i++)
+    {
+        ModelData::Wall toDraw = ModelData::GetWall(i);
+        //Draw the wall to screen
+    }
+
+
     SDL_RenderPresent(renderer);    //Render the above
    
     SaveScreenshot(renderer); //Save a screenshot with the name "name"
 
-    SDL_Delay(10000);
-
+    //Handle mouse movement and quit upon keypress
+    bool isRunning = true;
+    while (isRunning) {
+        SDL_Event event;
+        // Start our event loop
+        while (SDL_PollEvent(&event)) {
+            // Handle each specific event
+            if (event.type == SDL_QUIT) {
+                isRunning = false;
+            }
+            if (event.type == SDL_MOUSEMOTION) {
+                std::cout << "mouse has been moved\n";
+            }
+            if (event.type == SDL_KEYDOWN) {
+                std::cout << "a key has been pressed\n";
+                SDL_DestroyWindow(window);
+                isRunning = false;
+            }
+        }
+    }
     return 0;
 }
 
@@ -47,8 +74,6 @@ int main(int argc, char* argv[])
 void SaveScreenshot(SDL_Renderer* renderer) {
     //Save a screenshot
     const Uint32 format = SDL_PIXELFORMAT_ARGB8888;
-    const int width = 600;
-    const int height = 400;
 
     SDL_Surface* surface = SDL_CreateRGBSurfaceWithFormat(0, width, height, 32, format);
     SDL_RenderReadPixels(renderer, NULL, format, surface->pixels, surface->pitch);      //Change this null to a rect to calculate for different rooms
