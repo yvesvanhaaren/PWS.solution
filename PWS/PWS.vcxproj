@@ -119,7 +119,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\juiyv\source\repos\PWS.solution\SDL2\include;C:\Users\caspe\source\repos\PWS.solution\SDL2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\caspe\source\repos\PWS.solution\SDL2_image-2.0.5\acinclude;C:\Users\juiyv\source\repos\PWS.solution\SDL2\include;C:\Users\caspe\source\repos\PWS.solution\SDL2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
