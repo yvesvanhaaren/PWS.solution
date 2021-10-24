@@ -36,6 +36,7 @@ public:
 		{
 			if (Endpoints[i].distance({ beginpointx,beginpointy }) < distance)
 			{
+				distance = Endpoints[i].distance({ beginpointx,beginpointy });
 				nearest = Endpoints[i];
 			}
 		}

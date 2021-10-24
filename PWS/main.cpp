@@ -50,7 +50,6 @@ int main(int argc, char* argv[])
             }             
             //OPTIONAL save screenshot of every configuration
             //SaveScreenshot(renderer, std::to_string(i) + "_" + std::to_string(j));
-
             ClearRenderer(renderer);
         }
     }
@@ -154,14 +153,17 @@ Uint32 get_pixel32(SDL_Surface* surface, int x, int y)
     return pixels[(y * surface->w) + x];
 }
 
+float* coverage = new float[width * height]; // * allocates memory
+SDL_Surface* coveragesurface;
+
 float CalculateCoverage(SDL_Renderer* renderer) 
 {
     //Calculate coverage
     const Uint32 format = SDL_PIXELFORMAT_ARGB8888;
-    SDL_Surface* surface = SDL_CreateRGBSurfaceWithFormat(0, width, height, 32, format); // * -> heap || no * -> stack
-    SDL_RenderReadPixels(renderer, NULL, format, surface->pixels, surface->pitch);
+    coveragesurface = SDL_CreateRGBSurfaceWithFormat(0, width, height, 32, format); // * -> heap || no * -> stack
+    SDL_RenderReadPixels(renderer, NULL, format, coveragesurface->pixels, coveragesurface->pitch);
 
-    float* coverage = new float[width * height]; // * allocates memory
+
     coverage[0] = 1;
 
     for (int i = 0; i < width; i++)
@@ -169,7 +171,7 @@ float CalculateCoverage(SDL_Renderer* renderer)
         for (int j = 0; j < height; j++)
         {
             SDL_Color col;
-            col = GetPixel(surface, i, j);
+            col = GetPixel(coveragesurface, i, j);
             coverage[i * height + j] = ((float)col.r + (float)col.b + (float)col.g) / 3.0f; //Return coverage value at i, j
         }
     }
@@ -183,6 +185,8 @@ float CalculateCoverage(SDL_Renderer* renderer)
     omega = sum / ((float)width * (float)height);
     std::cout << omega;
     std::cout << "\n";
+
+    SDL_FreeSurface(coveragesurface);
     return omega;
     //Surface and coverage are never deleted so program uses considerably more memory than necessary
 }
