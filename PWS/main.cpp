@@ -2,66 +2,69 @@
 #include "Walls.h"
 #include "Vectors.h"
 #include "ModelData.h"
+#include <string>
 
-void SaveScreenshot(SDL_Renderer* renderer);          //Declare function so we can use them in main
+void SaveScreenshot(SDL_Renderer* renderer, std::string name);
+float CalculateCoverage(SDL_Renderer* renderer);
+void DrawRouter(SDL_Renderer* renderer, int bx, int by);
+void DrawWalls(SDL_Renderer* renderer);
+void ClearRenderer(SDL_Renderer* renderer);
 SDL_Color GetPixel(SDL_Surface* srf, int x, int y);
 Uint32 get_pixel32(SDL_Surface* surface, int x, int y);
-void CalculateCoverage(SDL_Renderer* renderer);
 
 const int width = ModelData::width;
 const int height = ModelData::height;
+float accuracy = (float)ModelData::GetAccuracy();
+int rtrDistance = ModelData::GetrtrDistance();
 
+struct RouterConfig {
+    Vector2 Location;
+    float Coverage;
+};
 int main(int argc, char* argv[])
 {
-
+    //Initialize SDL
     SDL_Init(SDL_INIT_EVERYTHING);
     SDL_Window* window = SDL_CreateWindow("Wi-Fi router location optimizer", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
-
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);  
-    SDL_RenderClear(renderer);  
-
-    /* ^^^^  Initialize SDL  */
-
-
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 50);  //Set the colour to white
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-
-
-    float accuracy = 2;
-    float size = 250;
-    float beginpointx = 0.5 * width;
-    float beginpointy = 0.5 * height;
-
-    for (float phi = 0; phi < 360; phi += (1 / accuracy))
+    ClearRenderer(renderer);
+    
+    //Simulate Wi-Fi router
+    RouterConfig OptimalSpot = { {0,0}, 0 };
+    for (int i = 0; i < width; i += rtrDistance)
     {
-        Vector2 Endpoint = Walls::FindFirstCollision(cos(phi), sin(phi), beginpointx, beginpointy);
-        SDL_RenderDrawLine(renderer, (int)beginpointx, (int)beginpointy, (int)Endpoint.x, (int)Endpoint.y);
-    }
-
-    SDL_RenderPresent(renderer);    //Render the above
-
-    CalculateCoverage(renderer);
-
-    //Draw all the walls
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-    for (int i = 0; i < ModelData::size; i++)
-    {
-        ModelData::Wall toDraw = ModelData::GetWall(i);
-        //Draw the wall to screen
-        if (toDraw.x){
-            SDL_RenderDrawLine(renderer, (int)toDraw.height, (int)toDraw.domains, (int)toDraw.height, (int)toDraw.domaine);
-        }
-
-        if (!toDraw.x)
+        for (int j = 0; j < height; j += rtrDistance)
         {
-            SDL_RenderDrawLine(renderer, (int)toDraw.domains, (int)toDraw.height, (int)toDraw.domaine, (int)toDraw.height);
+            DrawRouter(renderer, i, j);
+            //Render the above
+            SDL_RenderPresent(renderer);
+
+            //Calculate the coverage of the current setup
+            float Coverage = CalculateCoverage(renderer);
+            if (Coverage > OptimalSpot.Coverage) {
+                RouterConfig currentConfig;
+                currentConfig.Coverage = Coverage;
+                currentConfig.Location = { (float)i,(float)j };
+                OptimalSpot = currentConfig;
+            }             
+            //OPTIONAL save screenshot of every configuration
+            //SaveScreenshot(renderer, std::to_string(i) + "_" + std::to_string(j));
+
+            ClearRenderer(renderer);
         }
-        
     }
-    SDL_RenderPresent(renderer);    //Render the above
-   
-    SaveScreenshot(renderer); //Save a screenshot with the name "name"
+    //Final display
+    //Draw optimal routerconfig
+    DrawRouter(renderer, OptimalSpot.Location.x, OptimalSpot.Location.y);
+    //Draw the walls
+    DrawWalls(renderer);
+    //Render the above
+    SDL_RenderPresent(renderer);    
+    //Print configuration efficiency to the console
+    std::cout << OptimalSpot.Coverage << " is  the coverage at the optimal location (" << OptimalSpot.Location.x << ", " << OptimalSpot.Location.y << ")";
+    //Save a screenshot with the name "OptimalLocation"
+    SaveScreenshot(renderer, "OptimalLocation");
 
     //Handle mouse movement and quit upon keypress
     bool isRunning = true;
@@ -82,17 +85,53 @@ int main(int argc, char* argv[])
     }
     return 0;
 }
+void DrawRouter(SDL_Renderer* renderer, int bx, int by) 
+{
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, (255 / accuracy));
+
+    for (float phi = 0; phi < 360; phi += (1 / accuracy))
+    {
+        Vector2 e = Walls::FindFirstCollision(cos(phi), sin(phi), bx, by);
+        SDL_RenderDrawLine(renderer, bx, by, e.x, e.y);
+    }
+}
+void ClearRenderer(SDL_Renderer* renderer) 
+{
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+    SDL_RenderClear(renderer);
+}
+
+void DrawWalls(SDL_Renderer* renderer) 
+{
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    for (int i = 0; i < ModelData::size; i++)
+    {
+        ModelData::Wall toDraw = ModelData::GetWall(i);
+        //Draw the wall to screen
+        if (toDraw.x) {
+            SDL_RenderDrawLine(renderer, (int)toDraw.height, (int)toDraw.domains, (int)toDraw.height, (int)toDraw.domaine);
+        }
+
+        if (!toDraw.x)
+        {
+            SDL_RenderDrawLine(renderer, (int)toDraw.domains, (int)toDraw.height, (int)toDraw.domaine, (int)toDraw.height);
+        }
+
+    }
+}
 
 
-void SaveScreenshot(SDL_Renderer* renderer) {
+void SaveScreenshot(SDL_Renderer* renderer, std::string name) {
     //Save a screenshot
     const Uint32 format = SDL_PIXELFORMAT_ARGB8888;
 
     SDL_Surface* surface = SDL_CreateRGBSurfaceWithFormat(0, width, height, 32, format);
     SDL_RenderReadPixels(renderer, NULL, format, surface->pixels, surface->pitch);      //Change this null to a rect to calculate for different rooms
 
-    if (SDL_SaveBMP(surface, "name.bmp") != 0)
-    {        
+    name += ".bmp";
+    
+    if (SDL_SaveBMP(surface, name.c_str()) != 0)
+    {
         // Error saving bitmap
         SDL_Log("SDL_SaveBMP failed: %s\n", SDL_GetError());
     }
@@ -115,7 +154,7 @@ Uint32 get_pixel32(SDL_Surface* surface, int x, int y)
     return pixels[(y * surface->w) + x];
 }
 
-void CalculateCoverage(SDL_Renderer* renderer) 
+float CalculateCoverage(SDL_Renderer* renderer) 
 {
     //Calculate coverage
     const Uint32 format = SDL_PIXELFORMAT_ARGB8888;
@@ -131,7 +170,7 @@ void CalculateCoverage(SDL_Renderer* renderer)
         {
             SDL_Color col;
             col = GetPixel(surface, i, j);
-            coverage[i * height + j] = ((float)col.r + (float)col.b + (float)col.g) / 3.0; //Return coverage value at i, j
+            coverage[i * height + j] = ((float)col.r + (float)col.b + (float)col.g) / 3.0f; //Return coverage value at i, j
         }
     }
 
@@ -143,5 +182,7 @@ void CalculateCoverage(SDL_Renderer* renderer)
     }
     omega = sum / ((float)width * (float)height);
     std::cout << omega;
+    std::cout << "\n";
+    return omega;
     //Surface and coverage are never deleted so program uses considerably more memory than necessary
 }

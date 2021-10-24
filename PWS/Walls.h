@@ -1,10 +1,10 @@
 #pragma once
-#include "Vectors.h"
 #include "ModelData.h"
+#include "Vectors.h"
+
 static class Walls
 {
 public:
-
 
 	static Vector2 FindFirstCollision(float a, float b, float beginpointx, float beginpointy)
 	{
