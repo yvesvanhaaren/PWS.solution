@@ -5,7 +5,7 @@ public:
 	static const int width = 600;
 	static const int height = 400;
 	static const int accuracy = 5;
-	static const int rtrDistance = 21; //To prevent router from being inside the wall (previously 20)
+	static const int rtrDistance = 20; //To prevent router from being inside the wall (previously 20)
 
 	enum WallType {
 		Default

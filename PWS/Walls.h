@@ -69,5 +69,37 @@ public:
 		}
 		return { INFINITY,INFINITY };
 	}
+
+	static bool OnWall (float beginpointx, float beginpointy) 
+	{
+		for (int i = 0; i < ModelData::size; i++)
+		{
+			ModelData::Wall wall = ModelData::GetWall(i);
+			
+			if (wall.x)
+			{
+				int domainx = wall.domains;
+				int domainy = wall.domaine;
+				float e = wall.height;
+				float t = (e - beginpointx);
+				if (t == 0)
+				{
+					return true;
+				}
+			}
+			else if (!wall.x)
+			{
+				int domainx = wall.domains;
+				int domainy = wall.domaine;
+				float e = wall.height;
+				float t = (e - beginpointy);
+				if (t == 0)
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 };
 

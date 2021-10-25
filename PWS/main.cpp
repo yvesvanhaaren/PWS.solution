@@ -36,21 +36,29 @@ int main(int argc, char* argv[])
     {
         for (int j = 0; j < height; j += rtrDistance)
         {
-            DrawRouter(renderer, i, j);
-            //Render the above
-            SDL_RenderPresent(renderer);
+            if (!Walls::OnWall(i, j))
+            {
+                DrawRouter(renderer, i, j);
+                //Render the above
+                SDL_RenderPresent(renderer);
 
-            //Calculate the coverage of the current setup
-            float Coverage = CalculateCoverage(renderer);
-            if (Coverage > OptimalSpot.Coverage) {
-                RouterConfig currentConfig;
-                currentConfig.Coverage = Coverage;
-                currentConfig.Location = { (float)i,(float)j };
-                OptimalSpot = currentConfig;
-            }             
-            //OPTIONAL save screenshot of every configuration
-            //SaveScreenshot(renderer, std::to_string(i) + "_" + std::to_string(j));
-            ClearRenderer(renderer);
+                //Calculate the coverage of the current setup
+                float Coverage = CalculateCoverage(renderer);
+                std::cout << Coverage << " at " << i << ", " << j << "\n";
+                if (Coverage > OptimalSpot.Coverage) {
+                    RouterConfig currentConfig;
+                    currentConfig.Coverage = Coverage;
+                    currentConfig.Location = { (float)i,(float)j };
+                    OptimalSpot = currentConfig;
+                }
+                //OPTIONAL save screenshot of every configuration
+                //SaveScreenshot(renderer, std::to_string(i) + "_" + std::to_string(j));
+                ClearRenderer(renderer);
+            }
+            else
+            {
+                std::cout << "Location is obstructed\n";
+            }
         }
     }
     //Final display
@@ -183,8 +191,8 @@ float CalculateCoverage(SDL_Renderer* renderer)
         sum += coverage[i];
     }
     omega = sum / ((float)width * (float)height);
-    std::cout << omega;
-    std::cout << "\n";
+
+    
 
     SDL_FreeSurface(coveragesurface);
     return omega;
