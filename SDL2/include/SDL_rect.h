@@ -74,7 +74,7 @@ typedef struct SDL_FPoint
  * \sa SDL_UnionRect
  * \sa SDL_EnclosePoints
  */
-typedef struct SDL_Rect
+typedef struct 
 {
     int x, y;
     int w, h;

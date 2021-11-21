@@ -51,7 +51,7 @@ public:
 			int domainy = wall.domaine;
 			float e = wall.height;
 			float t = (e - beginpointx) / a;
-			if (t > 0 && b * t + beginpointy > domainx && b * t + beginpointy < domainy)
+			if (t > 0 && b * t + beginpointy >= domainx && b * t + beginpointy <= domainy)
 			{
 				return { t * a + beginpointx, t * b + beginpointy };
 			}
@@ -62,7 +62,7 @@ public:
 			int domainy = wall.domaine;
 			float e = wall.height;
 			float t = (e - beginpointy) / b;
-			if (t > 0 && a * t + beginpointx > domainx && a * t + beginpointx < domainy)
+			if (t > 0 && a * t + beginpointx >= domainx && a * t + beginpointx <= domainy)
 			{
 				return { t * a + beginpointx, t * b + beginpointy };				
 			}
@@ -70,36 +70,73 @@ public:
 		return { INFINITY,INFINITY };
 	}
 
-	static bool OnWall (float beginpointx, float beginpointy) 
+	static bool OnWall (float beginpointx, float beginpointy, bool b) 
 	{
+		bool a = false;
 		for (int i = 0; i < ModelData::size; i++)
 		{
 			ModelData::Wall wall = ModelData::GetWall(i);
-			
 			if (wall.x)
 			{
 				int domainx = wall.domains;
 				int domainy = wall.domaine;
 				float e = wall.height;
 				float t = (e - beginpointx);
-				if (t == 0)
+				if (t == 0 && t + beginpointy >= domainx && t + beginpointy <= domainy)
 				{
-					return true;
+					if (b)
+						return true;
+					else
+						a = !a;
 				}
 			}
-			else if (!wall.x)
+			if (!wall.x)
 			{
 				int domainx = wall.domains;
 				int domainy = wall.domaine;
 				float e = wall.height;
 				float t = (e - beginpointy);
-				if (t == 0)
+				if (t == 0 && beginpointx >= domainx && beginpointx <= domainy)
 				{
-					return true;
+					if (b)
+						return true;
+					else
+						a = !a;
 				}
 			}
 		}
-		return false;
+		return a;
+	}
+	static ModelData::Wall OnWall(float beginpointx, float beginpointy) 
+	{
+		for (int i = 0; i < ModelData::size; i++)
+		{
+			ModelData::Wall wall = ModelData::GetWall(i);
+
+			if (wall.x)
+			{
+				int domainx = wall.domains;
+				int domainy = wall.domaine;
+				float e = wall.height;
+				float t = (e - beginpointx);
+				if (t == 0 && t + beginpointy >= domainx && t + beginpointy <= domainy)
+				{
+					return ModelData::GetWall(i);
+				}
+			}
+			if (!wall.x)
+			{
+				int domainx = wall.domains;
+				int domainy = wall.domaine;
+				float e = wall.height;
+				float t = (e - beginpointy);
+				if (t == 0 && beginpointx >= domainx && beginpointx <= domainy)
+				{
+					return ModelData::GetWall(i);
+				}
+			}
+		}
+		return ModelData::GetWall(0);
 	}
 };
 
