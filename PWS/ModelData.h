@@ -5,7 +5,9 @@ static class ModelData
 public:
 	static const int width = 600;
 	static const int height = 400;
-	static const int rtrDistance = 20; //To prevent router from being inside the wall (previously 20)
+	static const int rtrDistance = 80; //To prevent router from being inside the wall (previously 20)
+	static const int RayCount = 18;	//Max 60
+	static const int Threads = 16;	//Max 16
 
 	enum WallType {
 		Default,
@@ -63,21 +65,25 @@ public:
 		};
 		return AllW[index];
 	}
-	static int GetrtrDistance() {
-		return rtrDistance;
-	}
+	static int GetrtrDistance() { return rtrDistance; }
+	static int GetRayCount() { return RayCount; }
+
+	static const int StartStrength = 100;
+
+	static int GetStartStrength() { return StartStrength; }
+
 	static float GetReflection(WallType a){
 		if (a == Default)
 			return 0.4f;
 		if (a == Glass)
-			return 0.2f;
+			return 0.3f;
 		return 0.4f;
 	}
 	static float GetPermittivity(WallType a) {
 		if (a == Default)
 			return 0.20f;
 		if (a == Glass)
-			return 0.40f;
+			return 0.30f;
 		return 0.1f;
 	}
 };
