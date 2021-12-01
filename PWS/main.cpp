@@ -46,7 +46,6 @@ int Thread_func(void* data)
     int index = tdata->index;
     int threadReturnValue = 0;
 
-
     SDL_SetRenderDrawBlendMode(renderer[index], SDL_BLENDMODE_BLEND);
     ClearRenderer(renderer[index]);
 
@@ -67,6 +66,7 @@ int main(int argc, char* argv[])
         window[i] = SDL_CreateWindow("Wi-Fi router location optimizer", -1200, 50, width, height, SDL_WINDOW_SHOWN); //This is problematic if we release this to the public please remove later thx;
         renderer[i] = SDL_CreateRenderer(window[i], -1, SDL_RENDERER_ACCELERATED);
     }
+
     int ActiveThreads = 0;
     int threadReturnValue = 0;
     //Simulate Wi-Fi router
@@ -175,10 +175,11 @@ void DrawRouter(SDL_Renderer* renderer, int bx, int by)
         Vector2 e = Walls::FindFirstCollision(cos(phi), sin(phi), bx, by);
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, ModelData::GetStartStrength());       //Need to do something with these opacities
         SDL_RenderDrawLine(renderer, bx, by, e.x, e.y);
-
-        DrawReflection(renderer, bx, by, e.x, e.y, ModelData::GetStartStrength());
+        if(ModelData::GetReflection(Walls::OnWall(e.x, e.y).walltype) > 0)
+            DrawReflection(renderer, bx, by, e.x, e.y, ModelData::GetStartStrength());
         SDL_RenderPresent(renderer);
-        DrawPermittivity(renderer, bx, by, e.x, e.y, ModelData::GetStartStrength());
+        if (ModelData::GetPermittivity(Walls::OnWall(e.x, e.y).walltype) > 0)
+            DrawPermittivity(renderer, bx, by, e.x, e.y, ModelData::GetStartStrength());
         SDL_RenderPresent(renderer);
 
     }
@@ -201,9 +202,9 @@ void DrawReflection(SDL_Renderer* renderer, int bx, int by, int ex, int ey, int 
                 {
                     SDL_RenderDrawLine(renderer, ex, ey, e.x, e.y);
                     ModelData::Wall a = Walls::OnWall(e.x, e.y);
-                    if (ModelData::GetReflection(wall.walltype) * WifiStrength2 > 1)
+                    if (ModelData::GetReflection(a.walltype) * WifiStrength2 > 1)
                         DrawReflection(renderer, ex, ey, e.x, e.y, WifiStrength2);
-                    if (ModelData::GetPermittivity(wall.walltype) * WifiStrength2 > 1)
+                    if (ModelData::GetPermittivity(a.walltype) * WifiStrength2 > 1)
                         DrawPermittivity(renderer, ex, ey, e.x, e.y, WifiStrength2);
                     SDL_SetRenderDrawColor(renderer, 255, 255, 255, WifiStrength * ModelData::GetReflection(wall.walltype));
                 }
@@ -218,9 +219,9 @@ void DrawReflection(SDL_Renderer* renderer, int bx, int by, int ex, int ey, int 
                 {
                     SDL_RenderDrawLine(renderer, ex, ey, e.x, e.y);
                     ModelData::Wall a = Walls::OnWall(e.x, e.y);
-                    if (ModelData::GetReflection(wall.walltype) * WifiStrength2 > 1)
+                    if (ModelData::GetReflection(a.walltype) * WifiStrength2 > 1)
                         DrawReflection(renderer, ex, ey, e.x, e.y, WifiStrength2);
-                    if (ModelData::GetPermittivity(wall.walltype) * WifiStrength2 > 1)
+                    if (ModelData::GetPermittivity(a.walltype) * WifiStrength2 > 1)
                         DrawPermittivity(renderer, ex, ey, e.x, e.y, WifiStrength2);
                     SDL_SetRenderDrawColor(renderer, 255, 255, 255, WifiStrength * ModelData::GetReflection(wall.walltype));
                 }
@@ -239,9 +240,9 @@ void DrawReflection(SDL_Renderer* renderer, int bx, int by, int ex, int ey, int 
                 {
                     SDL_RenderDrawLine(renderer, ex, ey, e.x, e.y);
                     ModelData::Wall a = Walls::OnWall(e.x, e.y);
-                    if (ModelData::GetReflection(wall.walltype) * WifiStrength2 > 1)
+                    if (ModelData::GetReflection(a.walltype) * WifiStrength2 > 1)
                         DrawReflection(renderer, ex, ey, e.x, e.y, WifiStrength2);
-                    if (ModelData::GetPermittivity(wall.walltype) * WifiStrength2 > 1)
+                    if (ModelData::GetPermittivity(a.walltype) * WifiStrength2 > 1)
                         DrawPermittivity(renderer, ex, ey, e.x, e.y, WifiStrength2);
                     SDL_SetRenderDrawColor(renderer, 255, 255, 255, WifiStrength * ModelData::GetReflection(wall.walltype));
                 }
@@ -256,9 +257,9 @@ void DrawReflection(SDL_Renderer* renderer, int bx, int by, int ex, int ey, int 
                 {
                     SDL_RenderDrawLine(renderer, ex, ey, e.x, e.y);
                     ModelData::Wall a = Walls::OnWall(e.x, e.y);
-                    if (ModelData::GetReflection(wall.walltype) * WifiStrength2 > 1)
+                    if (ModelData::GetReflection(a.walltype) * WifiStrength2 > 1)
                         DrawReflection(renderer, ex, ey, e.x, e.y, WifiStrength2);
-                    if (ModelData::GetPermittivity(wall.walltype) * WifiStrength2 > 1)
+                    if (ModelData::GetPermittivity(a.walltype) * WifiStrength2 > 1)
                         DrawPermittivity(renderer, ex, ey, e.x, e.y, WifiStrength2);
                     SDL_SetRenderDrawColor(renderer, 255, 255, 255, WifiStrength * ModelData::GetReflection(wall.walltype));
                 }
@@ -286,9 +287,9 @@ void DrawPermittivity(SDL_Renderer* renderer, int bx, int by, int ex, int ey, in
                 {
                     SDL_RenderDrawLine(renderer, ex, ey, e.x, e.y);
                     ModelData::Wall a = Walls::OnWall(e.x, e.y);
-                    if (ModelData::GetReflection(wall.walltype) * WifiStrength2 > 1)
+                    if (ModelData::GetReflection(a.walltype) * WifiStrength2 > 1)
                         DrawReflection(renderer, ex, ey, e.x, e.y, WifiStrength2);
-                    if (ModelData::GetPermittivity(wall.walltype) * WifiStrength2 > 1)
+                    if (ModelData::GetPermittivity(a.walltype) * WifiStrength2 > 1)
                         DrawPermittivity(renderer, ex, ey, e.x, e.y, WifiStrength2);
                     SDL_SetRenderDrawColor(renderer, 255, 255, 255, WifiStrength * ModelData::GetReflection(wall.walltype));
                 }
@@ -303,9 +304,9 @@ void DrawPermittivity(SDL_Renderer* renderer, int bx, int by, int ex, int ey, in
                 {
                     SDL_RenderDrawLine(renderer, ex, ey, e.x, e.y);
                     ModelData::Wall a = Walls::OnWall(e.x, e.y);
-                    if (ModelData::GetReflection(wall.walltype) * WifiStrength2 > 1)
+                    if (ModelData::GetReflection(a.walltype) * WifiStrength2 > 1)
                         DrawReflection(renderer, ex, ey, e.x, e.y, WifiStrength2);
-                    if (ModelData::GetPermittivity(wall.walltype) * WifiStrength2 > 1)
+                    if (ModelData::GetPermittivity(a.walltype) * WifiStrength2 > 1)
                         DrawPermittivity(renderer, ex, ey, e.x, e.y, WifiStrength2);
                     SDL_SetRenderDrawColor(renderer, 255, 255, 255, WifiStrength * ModelData::GetReflection(wall.walltype));
                 }
@@ -325,9 +326,9 @@ void DrawPermittivity(SDL_Renderer* renderer, int bx, int by, int ex, int ey, in
                 {
                     SDL_RenderDrawLine(renderer, ex, ey, e.x, e.y);
                     ModelData::Wall a = Walls::OnWall(e.x, e.y);
-                    if (ModelData::GetReflection(wall.walltype) * WifiStrength2 > 1)
+                    if (ModelData::GetReflection(a.walltype) * WifiStrength2 > 1)
                         DrawReflection(renderer, ex, ey, e.x, e.y, WifiStrength2);
-                    if (ModelData::GetPermittivity(wall.walltype) * WifiStrength2 > 1)
+                    if (ModelData::GetPermittivity(a.walltype) * WifiStrength2 > 1)
                         DrawPermittivity(renderer, ex, ey, e.x, e.y, WifiStrength2);
                     SDL_SetRenderDrawColor(renderer, 255, 255, 255, WifiStrength * ModelData::GetReflection(wall.walltype));
                 }
@@ -343,9 +344,9 @@ void DrawPermittivity(SDL_Renderer* renderer, int bx, int by, int ex, int ey, in
                     SDL_RenderDrawLine(renderer, ex, ey, e.x, e.y);
 
                     ModelData::Wall a = Walls::OnWall(e.x, e.y);
-                    if (ModelData::GetReflection(wall.walltype) * WifiStrength2 > 1)
+                    if (ModelData::GetReflection(a.walltype) * WifiStrength2 > 1)
                         DrawReflection(renderer, ex, ey, e.x, e.y, WifiStrength2);
-                    if (ModelData::GetPermittivity(wall.walltype) * WifiStrength2 > 1)
+                    if (ModelData::GetPermittivity(a.walltype) * WifiStrength2 > 1)
                         DrawPermittivity(renderer, ex, ey, e.x, e.y, WifiStrength2);
                     SDL_SetRenderDrawColor(renderer, 255, 255, 255, WifiStrength * ModelData::GetReflection(wall.walltype));
 

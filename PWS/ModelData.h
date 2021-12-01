@@ -3,15 +3,16 @@
 static class ModelData
 {
 public:
-	static const int width = 600;
-	static const int height = 400;
-	static const int rtrDistance = 80; //To prevent router from being inside the wall (previously 20)
-	static const int RayCount = 18;	//Max 60
+	static const int width = 340;
+	static const int height = 460;
+	static const int rtrDistance = 20; //To prevent router from being inside the wall (previously 20)
+	static const int RayCount = 30;	//Max 60
 	static const int Threads = 16;	//Max 16
 
 	enum WallType {
 		Default,
-		Glass
+		Glass,
+		Outer
 	};
 
 	struct Wall {
@@ -40,28 +41,24 @@ public:
 	{
 		Wall AllW[size]
 		{
-			{10, 10, 590, false, Default},	//y = 10 from x = 10 to x = 590
-			{390, 10, 590, false, Default}, //y = 390 from x = 10 to x = 590
-			{10, 10, 390, true, Default},	//x = 10 from y = 100 to y = 300
-			{590, 10, 390, true, Default},	//x = 490 from y = 100 to y = 150
-			//////////////////////////////////////////////////////////////////////////////////////////////////////
-			{330, 300, 590, false, Default},	//y = 200 from y = 100 to y = 300
-			{400, 10, 390, true, Default},	//x = 490 from y = 100 to y = 150
+			{1, 220, 460, true, Outer},	//y = 10 from x = 10 to x = 590
+			{320, 1, 200, false, Default}, //y = 390 from x = 10 to x = 590
+			{220, 1, 100, false, Outer},	//x = 10 from y = 100 to y = 300
+			{100, 220, 320, true, Default},	//x = 490 from y = 100 to y = 150
+			{100, 1, 220, true, Outer},	//x = 490 from y = 100 to y = 150
+			{459, 1, 200, false, Outer},	//y = 10 from x = 10 to x = 590
+			{200, 320, 459, true, Outer},	//y = 10 from x = 10 to x = 590
+			{320, 200, 339, false, Outer}, //y = 390 from x = 10 to x = 590
+			{339, 320, 1, true, Outer}, //y = 390 from x = 10 to x = 590
+			{1, 100, 340, false, Outer},	//y = 10 from x = 10 to x = 590
+			{190, 1, 320, true, Default}, //y = 390 from x = 10 to x = 590
 
-			{300, 360, 390, true, Default},	//x = 300 from y = 100 to y = 300
-			{300, 120, 330, true, Default},	//x = 300 from y = 100 to y = 300
-
-			{250, 370, 390, true, Default},	//x = 400 from y = 100 to y = 300
-			{250, 280, 370, true, Glass},	//x = 200 from y = 100 to y = 300
-			{250, 250, 280, true, Default},	//x = 400 from y = 100 to y = 300
-
-			{250, 10, 30, false, Default},	//y = 200 from y = 100 to y = 300
-			{250, 30, 230, false, Glass},	//y = 200 from y = 100 to y = 300
-			{250, 230, 250, false, Default},	//y = 200 from y = 100 to y = 300
-
-			{120, 10, 30, false, Default},	//y = 200 from y = 100 to y = 300
-			{120, 30, 230, false, Glass},	//y = 200 from y = 100 to y = 300
-			{120, 230, 300, false, Default}	//y = 200 from y = 100 to y = 300
+			{30, 100, 150, false, Default},	//y = 10 from x = 10 to x = 590
+			{40, 100, 150, false, Default},	//y = 10 from x = 10 to x = 590
+			{100, 100, 150, false, Default},	//y = 10 from x = 10 to x = 590
+			{140, 100, 150, false, Default},	//y = 10 from x = 10 to x = 590
+			{180, 100, 190, false, Default},	//y = 10 from x = 10 to x = 590
+			{150, 1, 180, true, Default}, //y = 390 from x = 10 to x = 590
 		};
 		return AllW[index];
 	}
@@ -74,16 +71,20 @@ public:
 
 	static float GetReflection(WallType a){
 		if (a == Default)
-			return 0.4f;
+			return 0.3f;
 		if (a == Glass)
 			return 0.3f;
-		return 0.4f;
+		if (a == Outer)
+			return 0.3f;
+		return 0.3f;
 	}
 	static float GetPermittivity(WallType a) {
 		if (a == Default)
 			return 0.20f;
 		if (a == Glass)
-			return 0.30f;
+			return 0.50f;
+		if (a == Outer)
+			return 0.0f;
 		return 0.1f;
 	}
 };
