@@ -67,7 +67,7 @@ public:
 				return { t * a + beginpointx, t * b + beginpointy };				
 			}
 		}
-		return { INFINITY,INFINITY };
+		return { INFINITY, INFINITY };
 	}
 
 	static bool OnWall (float beginpointx, float beginpointy, bool b) 
@@ -84,10 +84,9 @@ public:
 				float t = (e - beginpointx);
 				if (t == 0 && t + beginpointy >= domainx && t + beginpointy <= domainy)
 				{
-					if (b)
-						return true;
-					else
-						a = !a;
+
+					return true;
+
 				}
 			}
 			if (!wall.x)
@@ -98,13 +97,13 @@ public:
 				float t = (e - beginpointy);
 				if (t == 0 && beginpointx >= domainx && beginpointx <= domainy)
 				{
-					if (b)
-						return true;
-					else
-						a = !a;
+
+					return true;
+
 				}
 			}
 		}
+
 		return a;
 	}
 	static ModelData::Wall OnWall(float beginpointx, float beginpointy) 

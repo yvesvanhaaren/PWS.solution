@@ -9,17 +9,18 @@ struct RouterConfig {
     Vector2 Location;
     float Coverage;
 };
-
+SDL_BlendMode lighten = SDL_ComposeCustomBlendMode(SDL_BLENDFACTOR_SRC_COLOR, SDL_BLENDFACTOR_DST_COLOR, SDL_BLENDOPERATION_MAXIMUM, 
+                                                    SDL_BLENDFACTOR_SRC_COLOR, SDL_BLENDFACTOR_DST_COLOR, SDL_BLENDOPERATION_ADD);
 
 void CalculatePosition(SDL_Renderer* renderer, int i, int j);
-void DrawReflection(SDL_Renderer* renderer, int bx, int by, int ex, int ey, int WifiStrength);
-void DrawPermittivity(SDL_Renderer* renderer, int bx, int by, int ex, int ey, int WifiStrength);
+void DrawPermittivity(SDL_Renderer* renderer, float bx, float by, float ex, float ey, int WifiStrength, float angle);
 void DrawRoom(SDL_Renderer* renderer, int index, int intensity);
 void DrawRect(SDL_Renderer* renderer, int x1, int y1, int x2, int y2);
 void SaveScreenshot(SDL_Renderer* renderer, std::string name);
 void DrawRouter(SDL_Renderer* renderer, int bx, int by);
 void DrawWalls(SDL_Renderer* renderer);
 void ClearRenderer(SDL_Renderer* renderer);
+float DrawLine(SDL_Renderer* renderer, float bx, float by, float ex, float ey, float WifiStrength, float angle);
 
 const int width = ModelData::width;
 const int threads = ModelData::Threads;
@@ -46,7 +47,7 @@ int Thread_func(void* data)
     int index = tdata->index;
     int threadReturnValue = 0;
 
-    SDL_SetRenderDrawBlendMode(renderer[index], SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawBlendMode(renderer[index], lighten);
     ClearRenderer(renderer[index]);
 
     CalculatePosition(renderer[index], i, j);
@@ -63,19 +64,18 @@ int main(int argc, char* argv[])
     SDL_Init(SDL_INIT_EVERYTHING);
     for (int i = 0; i < threads; i++)
     {
-        window[i] = SDL_CreateWindow("Wi-Fi router location optimizer", -1200, 50, width, height, SDL_WINDOW_SHOWN); //This is problematic if we release this to the public please remove later thx;
+        window[i] = SDL_CreateWindow("Wi-Fi router location optimizer", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN); 
         renderer[i] = SDL_CreateRenderer(window[i], -1, SDL_RENDERER_ACCELERATED);
     }
-
+ 
     int ActiveThreads = 0;
     int threadReturnValue = 0;
     //Simulate Wi-Fi router
-    for (int i = 0; i < width; i += rtrDistance)
+    for (int i = rtrDistance; i < width; i += rtrDistance)
     {
-        for (int j = 0; j < height; j += rtrDistance)
+        for (int j = rtrDistance; j < height; j += rtrDistance)
         {
-
-            if (!Walls::OnWall(i, j, true))
+            if (!Walls::OnWall(i, j, true) && ModelData::IsOutsideHouse(i, j) == 1)
             {
                 SDL_Thread* thread[threads];
                 if (ActiveThreads < threads)
@@ -98,18 +98,14 @@ int main(int argc, char* argv[])
                     }
                     ActiveThreads = 0;
                 }
-                else
-                {
-                    std::cout << "Location is obstructed\n";
-                }
             }
         }
     }
-    SDL_Window* window = SDL_CreateWindow("Wi-Fi router location optimizer", -1200, 50, width, height, SDL_WINDOW_SHOWN); //This is problematic if we release this to the public please remove later thx
+    SDL_Window* window = SDL_CreateWindow("Wi-Fi router location optimizer", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN); //This is problematic if we release this to the public please remove later thx
 
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawBlendMode(renderer, lighten);
     ClearRenderer(renderer);
     //Final display
     //Draw optimal routerconfig
@@ -170,191 +166,85 @@ void CalculatePosition(SDL_Renderer* renderer, int i, int j)
 void DrawRouter(SDL_Renderer* renderer, int bx, int by) 
 {
 
-    for (float phi = 0; phi <= 1.99 * M_PI; phi += accuracy)
+    for (float phi = 0; phi <= 2.0f * M_PI; phi += accuracy)
     {
         Vector2 e = Walls::FindFirstCollision(cos(phi), sin(phi), bx, by);
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, ModelData::GetStartStrength());       //Need to do something with these opacities
-        SDL_RenderDrawLine(renderer, bx, by, e.x, e.y);
-        if(ModelData::GetReflection(Walls::OnWall(e.x, e.y).walltype) > 0)
-            DrawReflection(renderer, bx, by, e.x, e.y, ModelData::GetStartStrength());
-        SDL_RenderPresent(renderer);
+        float colour = ModelData::GetStartStrength();
+        SDL_SetRenderDrawColor(renderer, colour, colour, colour, 255);       //Need to do something with these opacities
+        colour = DrawLine(renderer, bx, by, e.x, e.y, colour, phi);
+
         if (ModelData::GetPermittivity(Walls::OnWall(e.x, e.y).walltype) > 0)
-            DrawPermittivity(renderer, bx, by, e.x, e.y, ModelData::GetStartStrength());
+            DrawPermittivity(renderer, bx, by, e.x, e.y, colour, phi);
         SDL_RenderPresent(renderer);
 
     }
 }
 
-void DrawReflection(SDL_Renderer* renderer, int bx, int by, int ex, int ey, int WifiStrength) 
+void DrawPermittivity(SDL_Renderer* renderer, float bx, float by, float ex, float ey, int WifiStrength, float angle)
 {
     ModelData::Wall wall = Walls::OnWall(ex, ey);
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, WifiStrength * ModelData::GetReflection(wall.walltype)); 
-    float WifiStrength2 = (float)WifiStrength * ModelData::GetReflection(wall.walltype);
+    float colour = WifiStrength - ModelData::GetPermittivity(wall.walltype);
 
-    if (wall.x)
-    {
-        if (wall.height > bx) 
-        {
-            for (float phi = 0.5 * M_PI + accuracy; phi <= 1.49 * M_PI; phi += accuracy)
-            {
-                Vector2 e = Walls::FindFirstCollision(cos(phi), sin(phi), ex, ey);
-                if (Walls::OnWall(ex, ey, false))
-                {
-                    SDL_RenderDrawLine(renderer, ex, ey, e.x, e.y);
-                    ModelData::Wall a = Walls::OnWall(e.x, e.y);
-                    if (ModelData::GetReflection(a.walltype) * WifiStrength2 > 1)
-                        DrawReflection(renderer, ex, ey, e.x, e.y, WifiStrength2);
-                    if (ModelData::GetPermittivity(a.walltype) * WifiStrength2 > 1)
-                        DrawPermittivity(renderer, ex, ey, e.x, e.y, WifiStrength2);
-                    SDL_SetRenderDrawColor(renderer, 255, 255, 255, WifiStrength * ModelData::GetReflection(wall.walltype));
-                }
-            }
-        }
-        else if (wall.height < bx) 
-        {
-            for (float phi = 0.5 * M_PI - accuracy; phi >= -0.49 * M_PI; phi -= accuracy)
-            {
-                Vector2 e = Walls::FindFirstCollision(cos(phi), sin(phi), ex, ey);
-                if (Walls::OnWall(ex, ey, false)) 
-                {
-                    SDL_RenderDrawLine(renderer, ex, ey, e.x, e.y);
-                    ModelData::Wall a = Walls::OnWall(e.x, e.y);
-                    if (ModelData::GetReflection(a.walltype) * WifiStrength2 > 1)
-                        DrawReflection(renderer, ex, ey, e.x, e.y, WifiStrength2);
-                    if (ModelData::GetPermittivity(a.walltype) * WifiStrength2 > 1)
-                        DrawPermittivity(renderer, ex, ey, e.x, e.y, WifiStrength2);
-                    SDL_SetRenderDrawColor(renderer, 255, 255, 255, WifiStrength * ModelData::GetReflection(wall.walltype));
-                }
-            }
-        }
-
-    }
-    else if (!wall.x) 
-    {
-        if (wall.height > by) //no longer creates circles
-        {
-            for (float phi = (M_PI) + accuracy; phi <= (1.99 * M_PI); phi += accuracy)
-            {
-                Vector2 e = Walls::FindFirstCollision(cos(phi), sin(phi), ex, ey);
-                if (Walls::OnWall(ex, ey, false))
-                {
-                    SDL_RenderDrawLine(renderer, ex, ey, e.x, e.y);
-                    ModelData::Wall a = Walls::OnWall(e.x, e.y);
-                    if (ModelData::GetReflection(a.walltype) * WifiStrength2 > 1)
-                        DrawReflection(renderer, ex, ey, e.x, e.y, WifiStrength2);
-                    if (ModelData::GetPermittivity(a.walltype) * WifiStrength2 > 1)
-                        DrawPermittivity(renderer, ex, ey, e.x, e.y, WifiStrength2);
-                    SDL_SetRenderDrawColor(renderer, 255, 255, 255, WifiStrength * ModelData::GetReflection(wall.walltype));
-                }
-            }
-        }
-        else if (wall.height < by) 
-        {
-            for (float phi = M_PI - accuracy; phi >= 0.01; phi -= accuracy)
-            {
-                Vector2 e = Walls::FindFirstCollision(cos(phi), sin(phi), ex, ey);
-                if (Walls::OnWall(ex, ey, false))
-                {
-                    SDL_RenderDrawLine(renderer, ex, ey, e.x, e.y);
-                    ModelData::Wall a = Walls::OnWall(e.x, e.y);
-                    if (ModelData::GetReflection(a.walltype) * WifiStrength2 > 1)
-                        DrawReflection(renderer, ex, ey, e.x, e.y, WifiStrength2);
-                    if (ModelData::GetPermittivity(a.walltype) * WifiStrength2 > 1)
-                        DrawPermittivity(renderer, ex, ey, e.x, e.y, WifiStrength2);
-                    SDL_SetRenderDrawColor(renderer, 255, 255, 255, WifiStrength * ModelData::GetReflection(wall.walltype));
-                }
-            }
-        }
-    }
-} 
-
-void DrawPermittivity(SDL_Renderer* renderer, int bx, int by, int ex, int ey, int WifiStrength)
-{
-    ModelData::Wall wall = Walls::OnWall(ex, ey);
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, WifiStrength * ModelData::GetPermittivity(wall.walltype));  //Need to do something with these opacities
-    int WifiStrength2 = WifiStrength * ModelData::GetPermittivity(wall.walltype);
 
     SDL_RenderPresent(renderer);
 
-    if (wall.x)
+    Vector2 e = Walls::FindFirstCollision(cos(angle), sin(angle), ex, ey);
+    if (Walls::OnWall(ex, ey, false))
     {
-        if (wall.height < bx)
-        {
-            for (float phi = 0.5 * M_PI + accuracy; phi <= 1.49 * M_PI; phi += accuracy)
-            {
-                Vector2 e = Walls::FindFirstCollision(cos(phi), sin(phi), ex, ey);
-                if (Walls::OnWall(ex, ey, false)) 
-                {
-                    SDL_RenderDrawLine(renderer, ex, ey, e.x, e.y);
-                    ModelData::Wall a = Walls::OnWall(e.x, e.y);
-                    if (ModelData::GetReflection(a.walltype) * WifiStrength2 > 1)
-                        DrawReflection(renderer, ex, ey, e.x, e.y, WifiStrength2);
-                    if (ModelData::GetPermittivity(a.walltype) * WifiStrength2 > 1)
-                        DrawPermittivity(renderer, ex, ey, e.x, e.y, WifiStrength2);
-                    SDL_SetRenderDrawColor(renderer, 255, 255, 255, WifiStrength * ModelData::GetReflection(wall.walltype));
-                }
-            }
-        }
-        else if (wall.height > bx)
-        {
-            for (float phi = 0.5 * M_PI - accuracy; phi >= -0.49 * M_PI; phi -= accuracy)
-            {
-                Vector2 e = Walls::FindFirstCollision(cos(phi), sin(phi), ex, ey);
-                if (Walls::OnWall(ex, ey, false)) 
-                {
-                    SDL_RenderDrawLine(renderer, ex, ey, e.x, e.y);
-                    ModelData::Wall a = Walls::OnWall(e.x, e.y);
-                    if (ModelData::GetReflection(a.walltype) * WifiStrength2 > 1)
-                        DrawReflection(renderer, ex, ey, e.x, e.y, WifiStrength2);
-                    if (ModelData::GetPermittivity(a.walltype) * WifiStrength2 > 1)
-                        DrawPermittivity(renderer, ex, ey, e.x, e.y, WifiStrength2);
-                    SDL_SetRenderDrawColor(renderer, 255, 255, 255, WifiStrength * ModelData::GetReflection(wall.walltype));
-                }
+        ModelData::Wall a = Walls::OnWall(e.x, e.y);
+        float WifiStrength2 = DrawLine(renderer, ex, ey, e.x, e.y, colour, angle) - ModelData::GetPermittivity(a.walltype);
 
-            }
-        }
-
-    }
-    else if (!wall.x)
-    {
-        if (wall.height < by) //no longer creates circles
-        {
-            for (float phi = (M_PI)+accuracy; phi <= (1.99 * M_PI); phi += accuracy)
-            {
-                Vector2 e = Walls::FindFirstCollision(cos(phi), sin(phi), ex, ey);
-                if (Walls::OnWall(ex, ey, false)) 
-                {
-                    SDL_RenderDrawLine(renderer, ex, ey, e.x, e.y);
-                    ModelData::Wall a = Walls::OnWall(e.x, e.y);
-                    if (ModelData::GetReflection(a.walltype) * WifiStrength2 > 1)
-                        DrawReflection(renderer, ex, ey, e.x, e.y, WifiStrength2);
-                    if (ModelData::GetPermittivity(a.walltype) * WifiStrength2 > 1)
-                        DrawPermittivity(renderer, ex, ey, e.x, e.y, WifiStrength2);
-                    SDL_SetRenderDrawColor(renderer, 255, 255, 255, WifiStrength * ModelData::GetReflection(wall.walltype));
-                }
-            }
-        }
-        else if (wall.height > by)
-        {
-            for (float phi = M_PI - accuracy; phi >= 0.01; phi -= accuracy)
-            {
-                Vector2 e = Walls::FindFirstCollision(cos(phi), sin(phi), ex, ey);
-                if (Walls::OnWall(ex, ey, false))
-                {
-                    SDL_RenderDrawLine(renderer, ex, ey, e.x, e.y);
-
-                    ModelData::Wall a = Walls::OnWall(e.x, e.y);
-                    if (ModelData::GetReflection(a.walltype) * WifiStrength2 > 1)
-                        DrawReflection(renderer, ex, ey, e.x, e.y, WifiStrength2);
-                    if (ModelData::GetPermittivity(a.walltype) * WifiStrength2 > 1)
-                        DrawPermittivity(renderer, ex, ey, e.x, e.y, WifiStrength2);
-                    SDL_SetRenderDrawColor(renderer, 255, 255, 255, WifiStrength * ModelData::GetReflection(wall.walltype));
-
-                }
-            }
-        }
+        if (WifiStrength2 - ModelData::GetPermittivity(a.walltype) > 1)
+            DrawPermittivity(renderer, ex, ey, e.x, e.y, WifiStrength2, angle);
     }
 
+}
+float DrawLine(SDL_Renderer* renderer, float bx, float by, float ex, float ey, float WifiStrength, float angle) {
+
+    float dif = (-WifiStrength + ceil(WifiStrength));
+    SDL_SetRenderDrawColor(renderer, ceil(WifiStrength), ceil(WifiStrength), ceil(WifiStrength), 255);
+
+    float distance = sqrt(pow(bx - ex, 2) + pow(by - ey, 2));
+    float remainingdistance = (40 / ModelData::GetLPM() * (dif));
+
+    float rcx = cos(angle);
+    float rcy = sin(angle);
+
+    if (remainingdistance < distance)
+    {
+        SDL_RenderDrawLineF(renderer, bx, by, bx + (rcx * remainingdistance), by + (rcy * remainingdistance));
+        WifiStrength = floor(WifiStrength);
+        SDL_SetRenderDrawColor(renderer, WifiStrength, WifiStrength, WifiStrength, 255);
+    }
+    float a = ex;
+    float b = ey;
+    float colour = ceil(WifiStrength);
+    float index = 0;
+    for (float i = remainingdistance; i < distance - remainingdistance; i += (40 / ModelData::GetLPM()))
+    {
+        if (WifiStrength - index * ModelData::GetLPM() > 0)
+        {
+            colour = WifiStrength - index * ModelData::GetLPM();
+            SDL_SetRenderDrawColor(renderer, colour,colour,colour, 255);
+
+            float g = i;
+            float g2 = (i + (40 / ModelData::GetLPM()));
+            SDL_RenderDrawLineF(renderer, bx + rcx * g, by + rcy * g, bx + rcx * g2, by + rcy * g2);
+            a = bx + rcx * g2;
+            b = by + rcy * g2;
+        }
+        else 
+        {
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+            colour = 0;
+        }
+        index++;
+    }
+    SDL_RenderDrawLineF(renderer, a, b, ex, ey);
+
+    if(colour != 0)
+        colour += sqrt(pow(a - ex, 2) + pow(b - ey, 2)) / (40 / ModelData::GetLPM());
+    return colour;
 }
 
 void ClearRenderer(SDL_Renderer* renderer) 
@@ -377,12 +267,12 @@ void DrawWalls(SDL_Renderer* renderer)
 
         //Draw the wall to screen
         if (toDraw.x) {
-            SDL_RenderDrawLine(renderer, (int)toDraw.height, (int)toDraw.domains, (int)toDraw.height, (int)toDraw.domaine);
+            SDL_RenderDrawLineF(renderer, (int)toDraw.height, (int)toDraw.domains, (int)toDraw.height, (int)toDraw.domaine);
         }
 
         if (!toDraw.x)
         {
-            SDL_RenderDrawLine(renderer, (int)toDraw.domains, (int)toDraw.height, (int)toDraw.domaine, (int)toDraw.height);
+            SDL_RenderDrawLineF(renderer, (int)toDraw.domains, (int)toDraw.height, (int)toDraw.domaine, (int)toDraw.height);
         }
 
     }

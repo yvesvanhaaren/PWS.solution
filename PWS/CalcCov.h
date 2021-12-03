@@ -40,7 +40,7 @@ public:
             {
                 SDL_Color col;
                 col = GetPixel(coveragesurface, i, j);
-                coverage[i * height + j] = ((float)col.r + (float)col.b + (float)col.g) / 3.0f; //Return coverage value at i, j
+                coverage[i * height + j] = ModelData::IsOutsideHouse(i, j) * ((float)col.r + (float)col.b + (float)col.g) / 3.0f; //Return coverage value at i, j
             }
         }
 
