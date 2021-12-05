@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
         window[i] = SDL_CreateWindow("Wi-Fi router location optimizer", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN); 
         renderer[i] = SDL_CreateRenderer(window[i], -1, SDL_RENDERER_ACCELERATED);
     }
- 
+
     int ActiveThreads = 0;
     int threadReturnValue = 0;
     //Simulate Wi-Fi router
@@ -205,7 +205,7 @@ float DrawLine(SDL_Renderer* renderer, float bx, float by, float ex, float ey, f
     SDL_SetRenderDrawColor(renderer, ceil(WifiStrength), ceil(WifiStrength), ceil(WifiStrength), 255);
 
     float distance = sqrt(pow(bx - ex, 2) + pow(by - ey, 2));
-    float remainingdistance = (40 / ModelData::GetLPM() * (dif));
+    float remainingdistance = (4 / ModelData::GetLPM() * (dif));
 
     float rcx = cos(angle);
     float rcy = sin(angle);
@@ -216,19 +216,20 @@ float DrawLine(SDL_Renderer* renderer, float bx, float by, float ex, float ey, f
         WifiStrength = floor(WifiStrength);
         SDL_SetRenderDrawColor(renderer, WifiStrength, WifiStrength, WifiStrength, 255);
     }
-    float a = ex;
-    float b = ey;
+
+    float a = bx;
+    float b = by;
     float colour = ceil(WifiStrength);
     float index = 0;
-    for (float i = remainingdistance; i < distance - remainingdistance; i += (40 / ModelData::GetLPM()))
+    for (float i = remainingdistance; i < distance - remainingdistance - 4; i += 4)
     {
-        if (WifiStrength - index * ModelData::GetLPM() > 0)
+        if (WifiStrength - index * ModelData::GetLPM() * 0.10 > 0)
         {
-            colour = WifiStrength - index * ModelData::GetLPM();
+            colour = WifiStrength - index * ModelData::GetLPM() * 0.10;
             SDL_SetRenderDrawColor(renderer, colour,colour,colour, 255);
 
             float g = i;
-            float g2 = (i + (40 / ModelData::GetLPM()));
+            float g2 = (i + 4);
             SDL_RenderDrawLineF(renderer, bx + rcx * g, by + rcy * g, bx + rcx * g2, by + rcy * g2);
             a = bx + rcx * g2;
             b = by + rcy * g2;
@@ -260,11 +261,16 @@ void DrawWalls(SDL_Renderer* renderer)
     {
         ModelData::Wall toDraw = ModelData::GetWall(i);
 
-        if(toDraw.walltype == 0)
-            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+        if(toDraw.walltype == ModelData::Brick)
+            SDL_SetRenderDrawColor(renderer, 178, 34, 34, 255);   //rood
+        else if (toDraw.walltype == ModelData::Glass)
+            SDL_SetRenderDrawColor(renderer, 173, 216, 230, 255);   //blauw
+        else if (toDraw.walltype == ModelData::Wood)
+            SDL_SetRenderDrawColor(renderer, 222, 184, 135, 255); //bruin
+        else if (toDraw.walltype == ModelData::Default)
+            SDL_SetRenderDrawColor(renderer, 255, 192, 203, 255); //roze
         else
-            SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-
+            SDL_SetRenderDrawColor(renderer, 255, 192, 203, 255);
         //Draw the wall to screen
         if (toDraw.x) {
             SDL_RenderDrawLineF(renderer, (int)toDraw.height, (int)toDraw.domains, (int)toDraw.height, (int)toDraw.domaine);
